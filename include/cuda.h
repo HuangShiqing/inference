@@ -2,7 +2,7 @@
 #define CUDA_H
 
 #include "darknet.h"
-#include "my_definition.h"
+#include "my_macro.h"
 #include "cuda_runtime.h"
 #include "curand.h"
 #include "cublas_v2.h"

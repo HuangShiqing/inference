@@ -7,6 +7,8 @@
 //#include "layer.h"
 #include "network.h"
 
+#include "my_macro.h"
+
 typedef layer convolutional_layer;
 
 #ifdef GPU

@@ -11,9 +11,14 @@ network *init_net(int layer_num, int h, int w, int c) {
 	net->batch = 1;
 	net->inputs = h * w * c;
 	net->input = calloc(net->inputs * net->batch, sizeof(float));
+#ifdef GPU
+	net->gpu_index = gpu_index;
+//	net->output_gpu = out.output_gpu;
+	net->input_gpu = cuda_make_array(net->input, net->inputs * net->batch);
+//	net->truth_gpu = cuda_make_array(net->truth, net->truths*net->batch);
+#endif
 	fprintf(stderr,
 			"layer     filters    size              input                output\n");
-
 	return net;
 }
 
@@ -79,12 +84,10 @@ void finish_net(network *net) {
 	if (workspace_size) {
 		//printf("%ld\n", workspace_size);
 #ifdef GPU
-		if(gpu_index >= 0)
-		{
-			net->workspace = cuda_make_array(0, (workspace_size-1)/sizeof(float)+1);
-		}
-		else
-		{
+		if (gpu_index >= 0) {
+			net->workspace = cuda_make_array(0,
+					(workspace_size - 1) / sizeof(float) + 1);
+		} else {
 			net->workspace = calloc(1, workspace_size);
 		}
 #else
@@ -96,6 +99,9 @@ void finish_net(network *net) {
 	layer out = get_network_output_layer(net);
 	net->outputs = out.outputs;
 	net->output = out.output;
+#ifdef GPU
+	net->output_gpu = out.output_gpu;
+#endif
 
 }
 

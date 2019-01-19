@@ -38,7 +38,6 @@
 
 //add by myself
 #include "network.h"
-int gpu_index = 0;
 
 typedef struct{
     char *type;

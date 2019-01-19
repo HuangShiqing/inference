@@ -11,6 +11,7 @@
 #include "im2col.h"
 
 #include "my_layer.h"
+#include "my_macro.h"
 
 int main() {
 //	char *filename = "/home/hsq/DeepLearning/c++/inference/src/test.cfg";
