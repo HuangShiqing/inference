@@ -1,6 +1,8 @@
 #include "network.h"
 #include "connected_layer.h"
 #include "convolutional_layer.h"
+#include "maxpool_layer.h"
+#include "avgpool_layer.h"
 
 network *init_net(int layer_num, int h, int w, int c) {
 	network *net = make_network(layer_num);
@@ -68,6 +70,36 @@ int DenseLayer(network *net, int output, ACTIVATION activation,
 	return layer_index;
 }
 
+int MaxPool(network *net, int size, int stride, int padding, int layer_index) {
+	fprintf(stderr, "%5d ", layer_index);
+	int h, w, c;
+	layer l = { 0 };
+
+	h = net->layers[layer_index - 1].out_h;
+	w = net->layers[layer_index - 1].out_w;
+	c = net->layers[layer_index - 1].out_c;
+
+	l = make_maxpool_layer(1, h, w, c, size, stride, padding);
+	net->layers[layer_index] = l;
+	layer_index++;
+	return layer_index;
+}
+
+int AvgPool(network *net, int layer_index) {
+	fprintf(stderr, "%5d ", layer_index);
+	int h, w, c;
+	layer l = { 0 };
+
+	h = net->layers[layer_index - 1].out_h;
+	w = net->layers[layer_index - 1].out_w;
+	c = net->layers[layer_index - 1].out_c;
+
+	l = make_avgpool_layer(1, w, h, c);
+	net->layers[layer_index] = l;
+	layer_index++;
+	return layer_index;
+}
+
 void finish_net(network *net) {
 	//part1.set net's workspace
 	//part2.set net's outputs and output
@@ -110,7 +142,7 @@ float feature2col_get_value(network *net, float *net_outputs, int h, int w,
 	//TODO:assert the boundary of the h,w,c
 	int out_h = net->layers[net->n - 1].out_h;
 	int out_w = net->layers[net->n - 1].out_w;
-//	out_c = net->layers[net->n - 1].out_c;
+	//	out_c = net->layers[net->n - 1].out_c;
 	return net_outputs[w + out_w * h + out_w * out_h * c];
 }
 

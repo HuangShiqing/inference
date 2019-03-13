@@ -7,6 +7,7 @@
 #include "network.h"
 #include "connected_layer.h"
 #include "convolutional_layer.h"
+#include "maxpool_layer.h"
 #include "utils.h"
 #include "im2col.h"
 
@@ -20,7 +21,7 @@ int main() {
 //net params
 	int layer_num = 1;
 	int layer_index = 0;
-	int input_h = 416, input_w = 416, c = 3;
+	int input_h = 224, input_w = 224, c = 3;
 
 	image im = load_image_color(
 			"/home/hsq/DeepLearning/c++/inference/src/1.jpg", input_h, input_w);
@@ -32,7 +33,29 @@ int main() {
 	network *net = init_net(layer_num, input_h, input_w, c);
 
 	layer_index = Conv2d(net, 64, 3, 1, 1, RELU, BN, layer_index);
-//	layer_index = DenseLayer(net, 2, LINEAR, no_BN, layer_index);
+	layer_index = Conv2d(net, 64, 3, 1, 1, RELU, BN, layer_index);
+	layer_index = MaxPool(net, 2, 2, 0, layer_index);
+
+	layer_index = Conv2d(net, 128, 3, 1, 1, RELU, BN, layer_index);
+	layer_index = Conv2d(net, 128, 3, 1, 1, RELU, BN, layer_index);
+	layer_index = MaxPool(net, 2, 2, 0, layer_index);
+
+	layer_index = Conv2d(net, 256, 3, 1, 1, RELU, BN, layer_index);
+	layer_index = Conv2d(net, 256, 3, 1, 1, RELU, BN, layer_index);
+	layer_index = Conv2d(net, 256, 3, 1, 1, RELU, BN, layer_index);
+	layer_index = MaxPool(net, 2, 2, 0, layer_index);
+
+	layer_index = Conv2d(net, 512, 3, 1, 1, RELU, BN, layer_index);
+	layer_index = Conv2d(net, 512, 3, 1, 1, RELU, BN, layer_index);
+	layer_index = Conv2d(net, 512, 3, 1, 1, RELU, BN, layer_index);
+	layer_index = MaxPool(net, 2, 2, 0, layer_index);
+
+	layer_index = Conv2d(net, 512, 3, 1, 1, RELU, BN, layer_index);
+	layer_index = Conv2d(net, 512, 3, 1, 1, RELU, BN, layer_index);
+	layer_index = Conv2d(net, 512, 3, 1, 1, RELU, BN, layer_index);
+
+	layer_index = AvgPool(net, layer_index);
+	layer_index = DenseLayer(net, 2, LINEAR, no_BN, layer_index);
 
 	finish_net(net);
 

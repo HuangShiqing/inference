@@ -16,6 +16,8 @@ network *init_net(int layer_num, int h, int w, int c);
 int Conv2d(network *net, int filter, int size, int stride, int padding, int activation,
 		int batch_normalize, int layer_index);
 int DenseLayer(network *net, int output, ACTIVATION activation, int batch_normalize, int layer_index);
+int MaxPool(network *net, int size, int stride, int padding, int layer_index);
+int AvgPool(network *net, int layer_index);
 void finish_net(network *net);
 float feature2col_get_value(network *net, float *net_outputs, int h, int w,
 		int c);
