@@ -3,5 +3,6 @@
 
 //#define OPENCV
 #define GPU
+#define CUDNN
 
 #endif
