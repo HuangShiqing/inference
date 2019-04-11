@@ -15,6 +15,10 @@
 **  注意：在im中并没有存储补0的元素值，因此height，width都是没有补0时输入图像真正的
 **       高、宽；而row与col则是补0之后，元素所在的行列，因此，要准确获取在im中的元素值，
 **       首先需要减去pad以获取在im中真实的行列数
+**查看图片各点值代码
+**float b;
+**int row = 0, col = 0, channel = 0;
+**b = im2col_get_pixel(im.data, input_h, input_w, c, row, col, channel, 0);
 */
 float im2col_get_pixel(float *im, int height, int width, int channels, int row,
 		int col, int channel, int pad)
