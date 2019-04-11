@@ -24,6 +24,43 @@ network *init_net(int layer_num, int h, int w, int c) {
 	return net;
 }
 
+void finish_net(network *net) {
+	//part1.set net's workspace
+	//part2.set net's outputs and output
+
+	//part1
+	size_t workspace_size = 0;
+	int i;
+	for (i = net->n - 1; i >= 0; --i) {
+		if (net->layers[i].workspace_size > workspace_size) {
+			workspace_size = net->layers[i].workspace_size;
+		}
+	}
+
+	if (workspace_size) {
+		//printf("%ld\n", workspace_size);
+#ifdef GPU
+		if (gpu_index >= 0) {
+			net->workspace = cuda_make_array(0,
+					(workspace_size - 1) / sizeof(float) + 1);
+		} else {
+			net->workspace = calloc(1, workspace_size);
+		}
+#else
+		net->workspace = calloc(1, workspace_size);
+#endif
+	}
+
+	//part2
+	layer out = get_network_output_layer(net);
+	net->outputs = out.outputs;
+	net->output = out.output;
+#ifdef GPU
+	net->output_gpu = out.output_gpu;
+#endif
+
+}
+
 //TODO: 把padding换成SAME或者VALID
 int Conv2d(network *net, int filter, int size, int stride, int padding,
 		int activation, int batch_normalize, int layer_index) {
@@ -99,44 +136,15 @@ int AvgPool(network *net, int layer_index) {
 	layer_index++;
 	return layer_index;
 }
-
-void finish_net(network *net) {
-	//part1.set net's workspace
-	//part2.set net's outputs and output
-
-	//part1
-	size_t workspace_size = 0;
-	int i;
-	for (i = net->n - 1; i >= 0; --i) {
-		if (net->layers[i].workspace_size > workspace_size) {
-			workspace_size = net->layers[i].workspace_size;
-		}
-	}
-
-	if (workspace_size) {
-		//printf("%ld\n", workspace_size);
-#ifdef GPU
-		if (gpu_index >= 0) {
-			net->workspace = cuda_make_array(0,
-					(workspace_size - 1) / sizeof(float) + 1);
-		} else {
-			net->workspace = calloc(1, workspace_size);
-		}
-#else
-		net->workspace = calloc(1, workspace_size);
-#endif
-	}
-
-	//part2
-	layer out = get_network_output_layer(net);
-	net->outputs = out.outputs;
-	net->output = out.output;
-#ifdef GPU
-	net->output_gpu = out.output_gpu;
-#endif
-
-}
-
+/*
+**查看输出示例代码
+**float *net_outputs = network_predict(net, im.data);
+**int i;
+**float b;
+**for (i = 0; i < 200; i++) {
+**	b = feature2col_get_value(net, net_outputs, i, i, 0);
+**}
+*/
 float feature2col_get_value(network *net, float *net_outputs, int h, int w,
 		int c) {
 	//TODO:assert the boundary of the h,w,c
