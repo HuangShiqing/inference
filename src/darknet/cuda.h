@@ -1,14 +1,13 @@
 #ifndef CUDA_H
 #define CUDA_H
 
+#ifdef GPU
+
 #include "darknet.h"
-#include "my_macro.h"
 #include "cuda_runtime.h"
 #include "curand.h"
 #include "cublas_v2.h"
 #include "cublas_api.h"
-
-#ifdef GPU
 
 void check_error(cudaError_t status);
 cublasHandle_t blas_handle();

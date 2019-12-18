@@ -5,7 +5,6 @@
 #include <string.h>
 #include <pthread.h>
 
-#include "my_macro.h"
 
 #define SECRET_NUM -1234
 extern int gpu_index;

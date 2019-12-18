@@ -8,8 +8,8 @@
 #ifndef MODEL_H_
 #define MODEL_H_
 
-network *vgg16_adjusted();
-
+network *vgg16_adjusted(int out_units);
+network *test_model();
 
 
 #endif /* MODEL_H_ */

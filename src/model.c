@@ -39,3 +39,15 @@ network *vgg16_adjusted(int out_units)
 
 	return net;
 }
+
+network *test_model()
+{
+	int layer_num = 1;
+	int layer_index = 0;
+	int input_h = 224, input_w = 224, c = 3;
+
+	network *net = init_net(layer_num, input_h, input_w, c);
+	layer_index = Conv2d(net, 64, 3, 1, 1, RELU, no_BN, layer_index);
+	finish_net(net);
+	return net;
+}

@@ -1,5 +1,4 @@
 int gpu_index = 0;
-#include "my_macro.h"
 
 #ifdef GPU
 

@@ -1,17 +1,16 @@
 #ifndef CONVOLUTIONAL_LAYER_H
 #define CONVOLUTIONAL_LAYER_H
 
-#include "cuda.h"
 #include "image.h"
 #include "activations.h"
 //#include "layer.h"
 #include "network.h"
 
-#include "my_macro.h"
 
 typedef layer convolutional_layer;
 
 #ifdef GPU
+#include "cuda.h"
 void forward_convolutional_layer_gpu(convolutional_layer layer, network net);
 void backward_convolutional_layer_gpu(convolutional_layer layer, network net);
 void update_convolutional_layer_gpu(convolutional_layer layer, update_args a);

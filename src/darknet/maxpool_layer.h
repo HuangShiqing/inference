@@ -2,7 +2,6 @@
 #define MAXPOOL_LAYER_H
 
 #include "image.h"
-#include "cuda.h"
 #include "layer.h"
 #include "network.h"
 
@@ -15,6 +14,7 @@ void forward_maxpool_layer(const maxpool_layer l, network net);
 void backward_maxpool_layer(const maxpool_layer l, network net);
 
 #ifdef GPU
+#include "cuda.h"
 void forward_maxpool_layer_gpu(maxpool_layer l, network net);
 void backward_maxpool_layer_gpu(maxpool_layer l, network net);
 #endif
