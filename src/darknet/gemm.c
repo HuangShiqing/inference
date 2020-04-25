@@ -75,13 +75,23 @@ void gemm_nn(int M, int N, int K, float ALPHA,
         float *A, int lda, 
         float *B, int ldb,
         float *C, int ldc)
+        //M=n,卷积核个数
+        //N=输出feature map的w*h
+        //K=k*k*c,单个卷积核的空间尺寸大小
+        //ALPHA=1
+        //*A=指向卷积核参数的指针
+        //lda=K=k*k*c,单个卷积核的空间尺寸大小
+        //*B=经过im2col的上一层feature map
+        //ldb=N=输出feature map的w*h
+        //*C=指向卷积结果的指针
+        //ldc=N=输出feature map的w*h
 {
     int i,j,k;
     #pragma omp parallel for
-    for(i = 0; i < M; ++i){
-        for(k = 0; k < K; ++k){
+    for(i = 0; i < M; ++i){//卷积核间的循环，M=卷积核个数
+        for(k = 0; k < K; ++k){//卷积核内的循环，K=单个卷积核的空间尺寸大小
             register float A_PART = ALPHA*A[i*lda+k];
-            for(j = 0; j < N; ++j){
+            for(j = 0; j < N; ++j){//N=输出feature map的w*h
                 C[i*ldc+j] += A_PART*B[k*ldb+j];
             }
         }

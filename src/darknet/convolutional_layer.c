@@ -455,9 +455,9 @@ void forward_convolutional_layer(convolutional_layer l, network net)
 //        net.input = l.binary_input;
 //    }
 
-    int m = l.n/l.groups;
-    int k = l.size*l.size*l.c/l.groups;
-    int n = l.out_w*l.out_h;
+    int m = l.n/l.groups;//n,卷积核个数
+    int k = l.size*l.size*l.c/l.groups;//k*k*c,单个卷积核的空间尺寸大小
+    int n = l.out_w*l.out_h;//输出feature map的w*h
     for(i = 0; i < l.batch; ++i){
         for(j = 0; j < l.groups; ++j){
             float *a = l.weights + j*l.nweights/l.groups;
