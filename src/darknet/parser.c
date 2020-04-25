@@ -19,11 +19,11 @@
 //#include "detection_layer.h"
 //#include "dropout_layer.h"
 //#include "gru_layer.h"
-#include "list.h"
+// #include "list.h"
 //#include "local_layer.h"
 //#include "maxpool_layer.h"
 //#include "normalization_layer.h"
-#include "option_list.h"
+// #include "option_list.h"
 #include "parser.h"
 //#include "region_layer.h"
 //#include "yolo_layer.h"
@@ -44,7 +44,7 @@ typedef struct{
     list *options;
 }section;
 
-list *read_cfg(char *filename);
+// list *read_cfg(char *filename);
 
 LAYER_TYPE string_to_layer_type(char * type)
 {
@@ -87,37 +87,37 @@ LAYER_TYPE string_to_layer_type(char * type)
     return BLANK;
 }
 
-void free_section(section *s)
-{
-    free(s->type);
-    node *n = s->options->front;
-    while(n){
-        kvp *pair = (kvp *)n->val;
-        free(pair->key);
-        free(pair);
-        node *next = n->next;
-        free(n);
-        n = next;
-    }
-    free(s->options);
-    free(s);
-}
+// void free_section(section *s)
+// {
+//     free(s->type);
+//     node *n = s->options->front;
+//     while(n){
+//         kvp *pair = (kvp *)n->val;
+//         free(pair->key);
+//         free(pair);
+//         node *next = n->next;
+//         free(n);
+//         n = next;
+//     }
+//     free(s->options);
+//     free(s);
+// }
 
-void parse_data(char *data, float *a, int n)
-{
-    int i;
-    if(!data) return;
-    char *curr = data;
-    char *next = data;
-    int done = 0;
-    for(i = 0; i < n && !done; ++i){
-        while(*++next !='\0' && *next != ',');
-        if(*next == '\0') done = 1;
-        *next = '\0';
-        sscanf(curr, "%g", &a[i]);
-        curr = next+1;
-    }
-}
+// void parse_data(char *data, float *a, int n)
+// {
+//     int i;
+//     if(!data) return;
+//     char *curr = data;
+//     char *next = data;
+//     int done = 0;
+//     for(i = 0; i < n && !done; ++i){
+//         while(*++next !='\0' && *next != ',');
+//         if(*next == '\0') done = 1;
+//         *next = '\0';
+//         sscanf(curr, "%g", &a[i]);
+//         curr = next+1;
+//     }
+// }
 
 typedef struct size_params{
     int batch;
@@ -177,37 +177,37 @@ typedef struct size_params{
 //}
 
 
-convolutional_layer parse_convolutional(list *options, size_params params)
-{
-    int n = option_find_int(options, "filters",1);
-    int size = option_find_int(options, "size",1);
-    int stride = option_find_int(options, "stride",1);
-    int pad = option_find_int_quiet(options, "pad",0);
-    int padding = option_find_int_quiet(options, "padding",0);
-    int groups = option_find_int_quiet(options, "groups", 1);
-    if(pad) padding = size/2;
+// convolutional_layer parse_convolutional(list *options, size_params params)
+// {
+//     int n = option_find_int(options, "filters",1);
+//     int size = option_find_int(options, "size",1);
+//     int stride = option_find_int(options, "stride",1);
+//     int pad = option_find_int_quiet(options, "pad",0);
+//     int padding = option_find_int_quiet(options, "padding",0);
+//     int groups = option_find_int_quiet(options, "groups", 1);
+//     if(pad) padding = size/2;
 
-    char *activation_s = option_find_str(options, "activation", "logistic");
-    ACTIVATION activation = get_activation(activation_s);
+//     char *activation_s = option_find_str(options, "activation", "logistic");
+//     ACTIVATION activation = get_activation(activation_s);
 
-    int batch,h,w,c;
-    h = params.h;
-    w = params.w;
-    c = params.c;
-    batch=params.batch;
-    if(!(h && w && c)) error("Layer before convolutional layer must output image.");
-    int batch_normalize = option_find_int_quiet(options, "batch_normalize", 0);
-    int binary = option_find_int_quiet(options, "binary", 0);
-    int xnor = option_find_int_quiet(options, "xnor", 0);
+//     int batch,h,w,c;
+//     h = params.h;
+//     w = params.w;
+//     c = params.c;
+//     batch=params.batch;
+//     if(!(h && w && c)) error("Layer before convolutional layer must output image.");
+//     int batch_normalize = option_find_int_quiet(options, "batch_normalize", 0);
+//     int binary = option_find_int_quiet(options, "binary", 0);
+//     int xnor = option_find_int_quiet(options, "xnor", 0);
 
-    //adjusted by me
-    convolutional_layer layer = make_convolutional_layer(batch,h,w,c,n,groups,size,stride,padding,activation, batch_normalize, binary, xnor, 0);
-//    convolutional_layer layer = make_convolutional_layer(batch,h,w,c,n,groups,size,stride,padding,activation, batch_normalize, binary, xnor, params.net->adam);
-//    layer.flipped = option_find_int_quiet(options, "flipped", 0);
-//    layer.dot = option_find_float_quiet(options, "dot", 0);
+//     //adjusted by me
+//     convolutional_layer layer = make_convolutional_layer(batch,h,w,c,n,groups,size,stride,padding,activation, batch_normalize, binary, xnor, 0);
+// //    convolutional_layer layer = make_convolutional_layer(batch,h,w,c,n,groups,size,stride,padding,activation, batch_normalize, binary, xnor, params.net->adam);
+// //    layer.flipped = option_find_int_quiet(options, "flipped", 0);
+// //    layer.dot = option_find_float_quiet(options, "dot", 0);
 
-    return layer;
-}
+//     return layer;
+// }
 
 //layer parse_crnn(list *options, size_params params)
 //{
@@ -259,18 +259,18 @@ convolutional_layer parse_convolutional(list *options, size_params params)
 //    return l;
 //}
 
-layer parse_connected(list *options, size_params params)
-{
-    int output = option_find_int(options, "output",1);
-    char *activation_s = option_find_str(options, "activation", "logistic");
-    ACTIVATION activation = get_activation(activation_s);
-    int batch_normalize = option_find_int_quiet(options, "batch_normalize", 0);
+// layer parse_connected(list *options, size_params params)
+// {
+//     int output = option_find_int(options, "output",1);
+//     char *activation_s = option_find_str(options, "activation", "logistic");
+//     ACTIVATION activation = get_activation(activation_s);
+//     int batch_normalize = option_find_int_quiet(options, "batch_normalize", 0);
 
-    // adjusted by me
-    layer l = make_connected_layer(params.batch, params.inputs, output, activation, batch_normalize, 0);
-//    layer l = make_connected_layer(params.batch, params.inputs, output, activation, batch_normalize, params.net->adam);
-    return l;
-}
+//     // adjusted by me
+//     layer l = make_connected_layer(params.batch, params.inputs, output, activation, batch_normalize, 0);
+// //    layer l = make_connected_layer(params.batch, params.inputs, output, activation, batch_normalize, params.net->adam);
+//     return l;
+// }
 
 //softmax_layer parse_softmax(list *options, size_params params)
 //{
@@ -884,40 +884,40 @@ int is_network(section *s)
 //    return net;
 //}
 
-list *read_cfg(char *filename)
-{
-    FILE *file = fopen(filename, "r");
-    if(file == 0) file_error(filename);
-    char *line;
-    int nu = 0;
-    list *options = make_list();
-    section *current = 0;
-    while((line=fgetl(file)) != 0){
-        ++ nu;
-        strip(line);
-        switch(line[0]){
-            case '[':
-                current = malloc(sizeof(section));
-                list_insert(options, current);
-                current->options = make_list();
-                current->type = line;
-                break;
-            case '\0':
-            case '#':
-            case ';':
-                free(line);
-                break;
-            default:
-                if(!read_option(line, current->options)){
-                    fprintf(stderr, "Config file error line %d, could parse: %s\n", nu, line);
-                    free(line);
-                }
-                break;
-        }
-    }
-    fclose(file);
-    return options;
-}
+// list *read_cfg(char *filename)
+// {
+//     FILE *file = fopen(filename, "r");
+//     if(file == 0) file_error(filename);
+//     char *line;
+//     int nu = 0;
+//     list *options = make_list();
+//     section *current = 0;
+//     while((line=fgetl(file)) != 0){
+//         ++ nu;
+//         strip(line);
+//         switch(line[0]){
+//             case '[':
+//                 current = malloc(sizeof(section));
+//                 list_insert(options, current);
+//                 current->options = make_list();
+//                 current->type = line;
+//                 break;
+//             case '\0':
+//             case '#':
+//             case ';':
+//                 free(line);
+//                 break;
+//             default:
+//                 if(!read_option(line, current->options)){
+//                     fprintf(stderr, "Config file error line %d, could parse: %s\n", nu, line);
+//                     free(line);
+//                 }
+//                 break;
+//         }
+//     }
+//     fclose(file);
+//     return options;
+// }
 
 //void save_convolutional_weights_binary(layer l, FILE *fp)
 //{

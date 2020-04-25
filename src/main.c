@@ -4,7 +4,7 @@
 #include <assert.h>
 #include <sys/time.h>
 
-//#include "parser.h"
+#include "parser.h"
 #include "network.h"
 #include "utils.h"
 #include "im2col.h"

@@ -1,56 +1,37 @@
-CROSS_COMPILE=aarch64-linux-gnu-
-CC=$(CROSS_COMPILE)gcc
-VPATH=./src/:./src/darknet/
-CFLAGS =-W -g -O0  -I./src/ -I./src/darknet/
-LDFLAGS = -lm#数学计算库
-obj = 
+CROSS_COMPILE =#aarch64-linux-gnu-#指定交叉编译器
+DEBUG = 1#指定当前为debug模式
+CC = $(CROSS_COMPILE)gcc#指定编译器
+CFLAGS = -I./src/ -I./src/darknet/ -Wall#指定头文件目录
+LDFLAGS = #指定库文件目录
+LIBS = -lm#指定库文件名称
+TARGET = inference#最终生成的可执行文件名
 
-target=inference
-OBJDIR=./obj/
-obj+= main.o network.o utils.o im2col.o parser.o list.o option_list.o my_layer.o image.o model.o connected_layer.o convolutional_layer.o maxpool_layer.o avgpool_layer.o batchnorm_layer.o activations.o blas.o gemm.o
-objs=$(addprefix $(OBJDIR),$(obj))
+VPATH = ./src/:./src/darknet/#告诉makefile去哪里找依赖文件和目标文件
 
-$(target): $(obj)
-	$(CC) $(CFLAGS) $(objs) -o inference $(LDFLAGS)
+#选择debug还是release
+ifeq ($(DEBUG), 1)
+CFLAGS+=-O0 -g
+else
+CFLAGS+=-Ofast
+endif
 
-main.o:main.c
-	$(CC) $(CFLAGS) -c $< -o $(OBJDIR)$@ 
+OBJ = main.o network.o utils.o im2col.o my_layer.o image.o model.o parser.o connected_layer.o convolutional_layer.o maxpool_layer.o avgpool_layer.o batchnorm_layer.o activations.o blas.o gemm.o#中间过程所涉及的.o文件
+OBJDIR = ./obj/#存放.o文件的文件夹
+OBJS = $(addprefix $(OBJDIR), $(OBJ))#添加路径
 
-image.o:image.c
-	$(CC) $(CFLAGS) -c $< -o $(OBJDIR)$@ 
-utils.o:utils.c
-	$(CC) $(CFLAGS) -c $< -o $(OBJDIR)$@ 
-im2col.o:im2col.c
-	$(CC) $(CFLAGS) -c $< -o $(OBJDIR)$@
-parser.o:parser.c
-	$(CC) $(CFLAGS) -c $< -o $(OBJDIR)$@	 
-#不知道干嘛的
-list.o:list.c
-	$(CC) $(CFLAGS) -c $< -o $(OBJDIR)$@
-option_list.o:option_list.c
-	$(CC) $(CFLAGS) -c $< -o $(OBJDIR)$@
+#指定需要完成的编译的对象
+all: obj $(TARGET)
 
-network.o:network.c
-	$(CC) $(CFLAGS) -c $< -o $(OBJDIR)$@ 
-model.o:model.c
-	$(CC) $(CFLAGS) -c $< -o $(OBJDIR)$@
-my_layer.o:my_layer.c
-	$(CC) $(CFLAGS) -c $< -o $(OBJDIR)$@ 
-connected_layer.o:connected_layer.c
-	$(CC) $(CFLAGS) -c $< -o $(OBJDIR)$@ 	
-convolutional_layer.o:convolutional_layer.c
-	$(CC) $(CFLAGS) -c $< -o $(OBJDIR)$@ 
-maxpool_layer.o:maxpool_layer.c
-	$(CC) $(CFLAGS) -c $< -o $(OBJDIR)$@ 
-avgpool_layer.o:avgpool_layer.c
-	$(CC) $(CFLAGS) -c $< -o $(OBJDIR)$@  
-batchnorm_layer.o:batchnorm_layer.c
-	$(CC) $(CFLAGS) -c $< -o $(OBJDIR)$@	
-activations.o:activations.c
-	$(CC) $(CFLAGS) -c $< -o $(OBJDIR)$@
-blas.o:blas.c
-	$(CC) $(CFLAGS) -c $< -o $(OBJDIR)$@	 		
-gemm.o:gemm.c
-	$(CC) $(CFLAGS) -c $< -o $(OBJDIR)$@
-clean:
-	rm -f $(objs) $(target)		
+#将所有的.o文件链接成最终的可执行文件，需要库目录和库名，注意，OBJS要在LIBS之前。另外，如果要指定.o的生成路径，需要保证TARGET的依赖项是含路径的
+$(TARGET):$(OBJS)
+		$(CC) $(OBJS) $(CFLAGS) $(LDFLAGS) $(LIBS) -o $(TARGET)
+#这个不是静态模式，而是通配符，第一个%类似bash中的*。
+$(OBJDIR)%.o: %.c
+		$(CC) -c $(CFLAGS) $< -o $@
+
+#用于生成存放.o文件的文件夹
+obj:
+		mkdir obj
+.PHONY : clean
+clean :#删除生成的文件夹
+		-rm -r obj
