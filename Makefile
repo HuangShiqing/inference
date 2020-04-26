@@ -15,7 +15,10 @@ else
 CFLAGS+=-Ofast
 endif
 
-OBJ = main.o network.o utils.o im2col.o my_layer.o image.o model.o parser.o connected_layer.o convolutional_layer.o maxpool_layer.o avgpool_layer.o batchnorm_layer.o activations.o blas.o gemm.o#中间过程所涉及的.o文件
+OBJ = main.o network.o utils.o im2col.o my_layer.o image.o model.o parser.o \
+	  connected_layer.o convolutional_layer.o maxpool_layer.o avgpool_layer.o \
+	  batchnorm_layer.o activations.o box.o route_layer.o upsample_layer.o yolo_layer.o \
+	  blas.o gemm.o#中间过程所涉及的.o文件
 OBJDIR = ./obj/#存放.o文件的文件夹
 OBJS = $(addprefix $(OBJDIR), $(OBJ))#添加路径
 

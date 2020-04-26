@@ -1,9 +1,14 @@
 #include "network.h"
+#include "parser.h"
 #include "connected_layer.h"
 #include "convolutional_layer.h"
 #include "maxpool_layer.h"
 #include "avgpool_layer.h"
+#include "upsample_layer.h"
+#include "route_layer.h"
+#include "yolo_layer.h"
 
+// layer_num必须严格等于网络实际的层数
 network *init_net(int layer_num, int h, int w, int c) {
 	network *net = make_network(layer_num);
 
@@ -132,6 +137,105 @@ int AvgPool(network *net, int layer_index) {
 	c = net->layers[layer_index - 1].out_c;
 
 	l = make_avgpool_layer(1, w, h, c);
+	net->layers[layer_index] = l;
+	layer_index++;
+	return layer_index;
+}
+
+int UpsampleLayer(network *net, int stride, int scale, int layer_index)
+{
+	fprintf(stderr, "%5d ", layer_index);
+	layer l = { 0 };
+	
+	int h = net->layers[layer_index - 1].out_h;
+	int w = net->layers[layer_index - 1].out_w;
+	int c = net->layers[layer_index - 1].out_c;
+
+	l = make_upsample_layer(1, w, h, c, stride);
+	// TODO: 优化这里的scale=1时，在forward_upsample_layer里就不需要乘了
+	l.scale = scale;
+	net->layers[layer_index] = l;
+	layer_index++;
+	return layer_index;
+}
+
+int RouteLayer(network *net, char *layers, int layer_index)
+{
+	fprintf(stderr, "%5d ", layer_index);
+	int len = strlen(layers);
+    if(!layers) error("Route Layer must specify input layers");
+    int n = 1;//计算有几个输入层
+    int i;
+    for(i = 0; i < len; ++i){
+        if (layers[i] == ',') ++n;
+    }
+
+    int *input_layers = calloc(n, sizeof(int));//指向需要进行concat操作的层的序号(绝对序号)
+    int *input_sizes = calloc(n, sizeof(int));//指向需要进行concat操作的层的输出尺寸
+    for(i = 0; i < n; ++i){
+        int index = atoi(layers);
+        layers = strchr(layers, ',')+1;
+        if(index < 0) index = layer_index + index;
+        input_layers[i] = index;
+        input_sizes[i] = net->layers[index].outputs;
+    }
+
+	layer l = { 0 };
+	l = make_route_layer(1, n, input_layers, input_sizes);
+	//计算输出的whc
+	convolutional_layer first = net->layers[input_layers[0]];
+    l.out_w = first.out_w;
+    l.out_h = first.out_h;
+    l.out_c = first.out_c;
+    for(i = 1; i < n; ++i){
+        int index = input_layers[i];
+        convolutional_layer next = net->layers[index];
+        if(next.out_w == first.out_w && next.out_h == first.out_h){
+            l.out_c += next.out_c;
+        }else{
+            l.out_h = l.out_w = l.out_c = 0;
+        }
+    }
+
+	net->layers[layer_index] = l;
+	layer_index++;
+	return layer_index;
+}
+
+// total=cfg文件yolo层的num,为总共的anchor个数，一般为9;
+// anchor为anchor的wh信息的;
+// mask_char为描述当前yolo所分配的anchor, 一般最后一个yolo层的l.mask=[0，1，2], 这里用"0,1,2"; 
+int YoloLayer(network *net, int total, char *anchor, char *mask_char, int classes, int layer_index)
+{
+	fprintf(stderr, "%5d ", layer_index);
+	layer l = { 0 };
+	int h = net->layers[layer_index - 1].out_h;
+	int w = net->layers[layer_index - 1].out_w;
+	// n为与每个yolo层分配的anchor个数一样,一般为3;
+	int n = total;//num初始设置为total没啥用，下面会根据mask的数量变的，一般n为3
+	int *mask = parse_yolo_mask(mask_char, &n);
+	l = make_yolo_layer(1, w, h, n, total, mask, classes);
+	//将anchor字符串转float存储到biases中
+	if(anchor){
+        int len = strlen(anchor);
+        int n = 1;
+        int i;
+        for(i = 0; i < len; ++i){
+            if (anchor[i] == ',') ++n;
+        }
+        for(i = 0; i < n; ++i){
+            float bias = atof(anchor);
+            // 可以看出yolo层的biases用来存储anchor的wh信息的
+            l.biases[i] = bias;
+            anchor = strchr(anchor, ',')+1;
+        }
+    }
+	// l.max_boxes = ;//训练用的参数
+	// l.jitter = ;//训练用的参数
+	// l.ignore_thresh = ;//训练用的参数
+	// l.truth_thresh = ;//训练用的参数
+	// l.random = ;//好像没用到的参数
+
 	net->layers[layer_index] = l;
 	layer_index++;
 	return layer_index;

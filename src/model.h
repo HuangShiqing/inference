@@ -10,6 +10,7 @@
 
 network *vgg16_adjusted(int out_units);
 network *test_model();
+network *yolov3_tiny(int classes);
 
 
 #endif /* MODEL_H_ */

@@ -131,21 +131,21 @@ struct layer{
     int batch;
 //    int forced;
 //    int flipped;
-    int inputs;
-    int outputs;
-    int nweights;
-    int nbiases;
+    int inputs;// 输入的元素个数
+    int outputs;// 输出的元素个数
+    int nweights;// 参数的元素个数
+    int nbiases;// 参数的元素个数
 //    int extra;
 //    int truths;
     int h,w,c;// 该层输入图片的高、宽、通道数
     int out_h, out_w, out_c;// 该层输出图片的高、宽、通道数
-    int n;// 对于卷积层，该参数表示卷积核个数，等于out_c
+    int n;// 对于卷积层,该参数表示卷积核个数,等于out_c;对于route层,n代表需要concat操作的输入层的数量;对于yolo层,n为与每个yolo层分配的anchor个数一样,一般为3
 //    int max_boxes;
     int groups;
     int size;// 核尺寸（比如卷积核，池化核等）
 //    int side;
     int stride;
-//    int reverse;
+    int reverse;// 目前只发现upsample层用到,一般为0,reverse=1时表示当前层其实是downsample
 //    int flatten;
 //    int spatial;
     int pad;
@@ -168,8 +168,8 @@ struct layer{
 //    float learning_rate_scale;
 //    float clip;
 //    int softmax;
-//    int classes;
-//    int coords;
+    int classes;// 目前只发现yolo层用到,需要分类的类别数
+    // int coords;// 该coords参数只有region层会设置为大于4，yolo层没有赋值
 //    int background;
 //    int rescore;
 //    int objectness;
@@ -178,8 +178,8 @@ struct layer{
 //    int reorg;
 //    int log;
 //    int tanh;
-//    int *mask;
-//    int total;
+    int *mask;// 目前只发现yolo层用到,一般最后一个yolo层的l.mask=[0，1，2],第一个yolo层l.mask=[6,7,8],用来指定9个anchor分配到cell的3个位置上
+    int total;// 目前只发现yolo层用到,total=cfg文件yolo层的num,为总共的anchor个数，一般为9
 
 //    float alpha;
 //    float beta;
@@ -207,15 +207,15 @@ struct layer{
 
 //    float temperature;
 //    float probability;
-//    float scale;
+    float scale;// 目前只发现upsample层用到，所有输出值都需要乘以这个scale，一般为1
 
     char  * cweights;
     int   * indexes;
-    int   * input_layers;
-    int   * input_sizes;
+    int   * input_layers;// 目前只发现route层用到，指向需要进行concat操作的层的序号(绝对序号)
+    int   * input_sizes;// 目前只发现route层用到，指向需要进行concat操作的层的输出尺寸
 //    int   * map;
 //    float * rand;
-    float * cost;
+    // float * cost;// 用于最后一层计算损失值
 //    float * state;
 //    float * prev_state;
 //    float * forgot_state;
@@ -229,18 +229,17 @@ struct layer{
 //
 //    float * binary_weights;
 
-    float * biases;
+    float * biases;//参数指针，存放方式为n;yolo层的biases用来存储anchor长宽信息，个数为2*total，一般为18个数
 //    float * bias_updates;
 
     float * scales;
 //    float * scale_updates;
 
-    //卷积层维度顺序：filter×n×kernel×kernel，卷积核个数，输入通道数，卷积核大小，卷积核大小
-    float * weights;
+    float * weights;//参数指针，存放方式为nchw
 //    float * weight_updates;
 
 //    float * delta;
-    float * output;
+    float * output;//输出指针，存放方式为nchw
 //    float * loss;
 //    float * squared;
 //    float * norms;
@@ -437,7 +436,7 @@ typedef struct network{
 //    float epoch;
 //    int subdivisions;
     layer *layers;// 存储网络所有的层，在make_network()中动态分配内存
-    float *output;
+    float *output;// 输出结果指针
 //    learning_rate_policy policy;
 
 //    float learning_rate;
@@ -459,8 +458,8 @@ typedef struct network{
 //    float B2;
 //    float eps;
 
-    int inputs;
-    int outputs;
+    int inputs;// 输入图片的元素数
+    int outputs;// 输出结果的元素数
 //    int truths;
 //    int notruth;
     int h, w, c;//输入尺寸
@@ -479,14 +478,13 @@ typedef struct network{
     int gpu_index;
 //    tree *hierarchy;
 
-    float *input;
+    float *input;// 输入指针;在forward的时候这个指针会更新指向前一层的输出
 //    float *truth;
 //    float *delta;
-    // 整个网络的工作空间，其元素个数为所有层中最大的l.workspace_size = l.out_h*l.out_w*l.size*l.size*l.c
-    float *workspace;
+    float *workspace;// 整个网络的工作空间,跟卷积的im2col+gemm实现有关,值为所有层中最大的l.workspace_size = l.out_h*l.out_w*l.size*l.size*l.c
 //    int train;
     int index;// 标志参数，当前网络的活跃层
-    float *cost;
+    // float *cost;// 用于最后一层计算损失值
 //    float clip;
 
 #ifdef GPU
@@ -520,11 +518,17 @@ typedef struct{
 } box;
 
 typedef struct detection{
+    // 相对于原图的x、y、w、h信息
     box bbox;
+    // 类别数，voc=20
     int classes;
+    // 属于每个类的概率，prob=s*class
     float *prob;
+    // 索引，用来表示框属于哪个anchor,值的范围是[0-8]
     float *mask;
+    // s的马甲
     float objectness;
+    // 用于nms，表示当前正在nms的类的索引
     int sort_class;
 } detection;
 

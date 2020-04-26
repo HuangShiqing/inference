@@ -5,6 +5,7 @@
 
 void save_network(network net, char *filename);
 //void save_weights_double(network net, char *filename);
-list *read_cfg(char *filename);
+int *parse_yolo_mask(char *a, int *num);
+// list *read_cfg(char *filename);
 
 #endif

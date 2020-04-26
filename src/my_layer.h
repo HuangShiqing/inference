@@ -18,6 +18,9 @@ int Conv2d(network *net, int filter, int size, int stride, int padding, int acti
 int DenseLayer(network *net, int output, ACTIVATION activation, int batch_normalize, int layer_index);
 int MaxPool(network *net, int size, int stride, int padding, int layer_index);
 int AvgPool(network *net, int layer_index);
+int UpsampleLayer(network *net, int stride, int scale, int layer_index);
+int RouteLayer(network *net, char *layers, int layer_index);
+int YoloLayer(network *net, int total, char *anchor, char *mask_char, int classes, int layer_index);
 void finish_net(network *net);
 float feature2col_get_value(network *net, float *net_outputs, int h, int w,
 		int c);

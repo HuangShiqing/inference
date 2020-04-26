@@ -286,26 +286,26 @@ typedef struct size_params{
 //    return layer;
 //}
 
-//int *parse_yolo_mask(char *a, int *num)
-//{
-//    int *mask = 0;
-//    if(a){
-//        int len = strlen(a);
-//        int n = 1;
-//        int i;
-//        for(i = 0; i < len; ++i){
-//            if (a[i] == ',') ++n;
-//        }
-//        mask = calloc(n, sizeof(int));
-//        for(i = 0; i < n; ++i){
-//            int val = atoi(a);
-//            mask[i] = val;
-//            a = strchr(a, ',')+1;
-//        }
-//        *num = n;
-//    }
-//    return mask;
-//}
+int *parse_yolo_mask(char *a, int *num)
+{
+   int *mask = 0;
+   if(a){
+       int len = strlen(a);
+       int n = 1;
+       int i;
+       for(i = 0; i < len; ++i){
+           if (a[i] == ',') ++n;
+       }
+       mask = calloc(n, sizeof(int));
+       for(i = 0; i < n; ++i){
+           int val = atoi(a);
+           mask[i] = val;
+           a = strchr(a, ',')+1;
+       }
+       *num = n;
+   }
+   return mask;
+}
 //
 //layer parse_yolo(list *options, size_params params)
 //{
@@ -1226,21 +1226,21 @@ void load_weights_upto(network *net, char *filename, int start, int cutoff)
     FILE *fp = fopen(filename, "rb");
     if(!fp) file_error(filename);
 
-//    int major;
-//    int minor;
-//    int revision;
-//    fread(&major, sizeof(int), 1, fp);
-//    fread(&minor, sizeof(int), 1, fp);
-//    fread(&revision, sizeof(int), 1, fp);
-//    if ((major*10 + minor) >= 2 && major < 1000 && minor < 1000){
-//        fread(net->seen, sizeof(size_t), 1, fp);
-//    } else {
-//        int iseen = 0;
-//        fread(&iseen, sizeof(int), 1, fp);
-//        *net->seen = iseen;
-//    }
-//    int transpose = (major > 1000) || (minor > 1000);
-    int transpose = 0;
+    int major;
+    int minor;
+    int revision;
+    fread(&major, sizeof(int), 1, fp);
+    fread(&minor, sizeof(int), 1, fp);
+    fread(&revision, sizeof(int), 1, fp);
+    if ((major*10 + minor) >= 2 && major < 1000 && minor < 1000){
+        fread(net->seen, sizeof(size_t), 1, fp);
+    } else {
+        int iseen = 0;
+        fread(&iseen, sizeof(int), 1, fp);
+        *net->seen = iseen;
+    }
+    int transpose = (major > 1000) || (minor > 1000);
+    // int transpose = 0;
 
     int i;
     for(i = start; i < net->n && i < cutoff; ++i){
