@@ -431,7 +431,7 @@ typedef enum {
 typedef struct network{
     int n;// 网络总层数（make_network()时赋值）
     int batch;
-    size_t *seen;// 目前已经读入的图片张数（网络已经处理的图片张数）（在make_network()中动态分配内存）
+    // size_t *seen;// 目前已经读入的图片张数（网络已经处理的图片张数）（在make_network()中动态分配内存）
     int *t;
 //    float epoch;
 //    int subdivisions;

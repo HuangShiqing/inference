@@ -1232,12 +1232,15 @@ void load_weights_upto(network *net, char *filename, int start, int cutoff)
     fread(&major, sizeof(int), 1, fp);
     fread(&minor, sizeof(int), 1, fp);
     fread(&revision, sizeof(int), 1, fp);
+    int iseen = 0;// 取消了net->seen
     if ((major*10 + minor) >= 2 && major < 1000 && minor < 1000){
-        fread(net->seen, sizeof(size_t), 1, fp);
-    } else {
-        int iseen = 0;
+        // fread(net->seen, sizeof(size_t), 1, fp);// size_t在64位机器上是8字节,32位机器上是4字节,这边原本要读取8字节,就用执行两次int代替
         fread(&iseen, sizeof(int), 1, fp);
-        *net->seen = iseen;
+        fread(&iseen, sizeof(int), 1, fp);        
+    } else {
+        // int iseen = 0;
+        fread(&iseen, sizeof(int), 1, fp);
+        // *net->seen = iseen;
     }
     int transpose = (major > 1000) || (minor > 1000);
     // int transpose = 0;
