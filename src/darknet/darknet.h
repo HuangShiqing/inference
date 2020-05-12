@@ -530,6 +530,9 @@ typedef struct detection{
     float objectness;
     // 用于nms，表示当前正在nms的类的索引
     int sort_class;
+    // added by HSQ. 用于指定当前框最大置信度的类别
+    float max_prob;
+    int max_class;
 } detection;
 
 typedef struct matrix{

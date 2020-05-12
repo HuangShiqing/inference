@@ -358,6 +358,11 @@ int get_yolo_detections(layer l, int w, int h, int netw, int neth, float thresh,
                 // dest.prob = s*class
                 float prob = objectness*predictions[class_index];
                 dets[count].prob[j] = (prob > thresh) ? prob : 0;
+                if(dets[count].prob[j] > dets[count].max_prob)
+                {
+                    dets[count].max_prob = dets[count].prob[j];
+                    dets[count].max_class = j;
+                }
             }
             ++count;
         }

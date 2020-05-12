@@ -526,6 +526,9 @@ detection *make_network_boxes(network *net, float thresh, int *num)
     detection *dets = calloc(nboxes, sizeof(detection));
     for(i = 0; i < nboxes; ++i){
         dets[i].prob = calloc(l.classes, sizeof(float));
+		// added by HSQ
+		dets[i].max_prob = -1.0;
+		dets[i].max_class = -1;
         // 该coords参数只有region层会设置为大于4，因此yolo无视
         // if(l.coords > 4){
         //     dets[i].mask = calloc(l.coords-4, sizeof(float));

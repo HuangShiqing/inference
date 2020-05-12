@@ -19,6 +19,7 @@ int nms_comparator(const void *pa, const void *pb)
     return 0;
 }
 
+// 在box层面上用框的置信度objectness去做nms
 void do_nms_obj(detection *dets, int total, int classes, float thresh)
 {
     int i, j, k;
@@ -55,7 +56,7 @@ void do_nms_obj(detection *dets, int total, int classes, float thresh)
     }
 }
 
-
+// 在box的每个类别层面上用每个类的置信度prob[i]去做nms
 void do_nms_sort(detection *dets, int total, int classes, float thresh)
 {
     int i, j, k;
