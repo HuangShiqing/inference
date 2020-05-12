@@ -3,14 +3,14 @@
 #include <gst/video/video.h>
 #include <gst/app/gstappsink.h>
 
-extern unsigned char **ringbuffer;
-extern unsigned char **ringbuffer_processed;
-extern unsigned int latest_index;
-extern unsigned int latest_index_processed;
-extern int ringbuffer_length;
+#include "my_common.h"
 
-#include "event.h"
-extern event_parameter event1;
+extern unsigned char *buffer_original;
+extern unsigned char *buffer_processed;
+extern unsigned char *buffer_show;
+
+// #include "event.h"
+// extern event_parameter event1;
 // event_parameter event2;
 extern pthread_mutex_t mutex1;
 extern pthread_mutex_t mutex2;
@@ -50,18 +50,12 @@ static GstFlowReturn new_sample(GstElement *sink) //, CustomData *data
         return GST_FLOW_ERROR;
     }
 
-    // copy to next ringbuffer
-    const unsigned int next_index = (latest_index + 1) % ringbuffer_length;
-    memcpy(ringbuffer[next_index], map.data, 320 * 240 * 3);
-    // printf("in new_sample ringbuffer: %p\r\n",ringbuffer);
-
     pthread_mutex_lock(&mutex1);
-    latest_index = next_index;
+    memcpy(buffer_original, map.data, WIDTH * HEIGHT * 3);
     pthread_mutex_unlock(&mutex1);
-    event_wake(&event1);//发出通知告诉inference线程可以进行处理了
+    // event_wake(&event1);//发出通知告诉inference线程可以进行处理了
 
-    // gtk_widget_queue_draw(video_window);
-
+    // gtk_widget_queue_draw(video_window);    
     gst_buffer_unmap(gstBuffer, &map);
     gst_sample_unref(gstSample);
 
@@ -161,7 +155,7 @@ static void state_changed_cb(GstBus *bus, GstMessage *msg)
     }
 }
 
-int gstreamer_init(int width, int height)
+int gstreamer_init()
 {
     GstBus *bus;
     GstStateChangeReturn ret;
@@ -192,8 +186,8 @@ int gstreamer_init(int width, int height)
     GstCaps *caps;
     caps = gst_caps_new_simple("video/x-raw",
                                "format", G_TYPE_STRING, "RGB",
-                               "width", G_TYPE_INT, width,
-                               "height", G_TYPE_INT, height,
+                               "width", G_TYPE_INT, WIDTH,
+                               "height", G_TYPE_INT, HEIGHT,
                                "framerate", GST_TYPE_FRACTION, 25, 1,
                                NULL);
     if (!gst_element_link_filtered(source, app_sink, caps))
@@ -208,7 +202,7 @@ int gstreamer_init(int width, int height)
     g_signal_connect(G_OBJECT(bus), "message::error", (GCallback)error_cb, NULL);
     g_signal_connect(G_OBJECT(bus), "message::state-changed", (GCallback)state_changed_cb, NULL);
 
-    event_init(&event1, 1);// 初始化inference事件
+    // event_init(&event1, 1);// 初始化inference事件
 
     /* Start playing */
     ret = gst_element_set_state(pipeline, GST_STATE_PLAYING);
