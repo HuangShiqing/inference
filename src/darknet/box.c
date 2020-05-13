@@ -51,6 +51,9 @@ void do_nms_obj(detection *dets, int total, int classes, float thresh)
                 for(k = 0; k < classes; ++k){
                     dets[j].prob[k] = 0;
                 }
+                // 消灭一个框把下面这两个参数也取消
+                dets[j].max_class = -1;
+                dets[j].max_prob = -1.0;
             }
         }
     }
