@@ -56,20 +56,20 @@ int *read_intlist(char *gpu_list, int *ngpus, int d)
     return gpus;
 }
 
-int *read_map(char *filename)
-{
-    int n = 0;
-    int *map = 0;
-    char *str;
-    FILE *file = fopen(filename, "r");
-    if(!file) file_error(filename);
-    while((str=fgetl(file))){
-        ++n;
-        map = realloc(map, n*sizeof(int));
-        map[n-1] = atoi(str);
-    }
-    return map;
-}
+// int *read_map(char *filename)
+// {
+//     int n = 0;
+//     int *map = 0;
+//     char *str;
+//     FILE *file = fopen(filename, "r");
+//     if(!file) file_error(filename);
+//     while((str=fgetl(file))){
+//         ++n;
+//         map = realloc(map, n*sizeof(int));
+//         map[n-1] = atoi(str);
+//     }
+//     return map;
+// }
 
 void sorta_shuffle(void *arr, size_t n, size_t size, size_t sections)
 {
@@ -176,19 +176,19 @@ char *find_char_arg(int argc, char **argv, char *arg, char *def)
 }
 
 
-char *basecfg(char *cfgfile)
-{
-    char *c = cfgfile;
-    char *next;
-    while((next = strchr(c, '/')))
-    {
-        c = next+1;
-    }
-    c = copy_string(c);
-    next = strchr(c, '.');
-    if (next) *next = 0;
-    return c;
-}
+// char *basecfg(char *cfgfile)
+// {
+//     char *c = cfgfile;
+//     char *next;
+//     while((next = strchr(c, '/')))
+//     {
+//         c = next+1;
+//     }
+//     c = copy_string(c);
+//     next = strchr(c, '.');
+//     if (next) *next = 0;
+//     return c;
+// }
 
 int alphanum_to_int(char c)
 {
@@ -332,36 +332,36 @@ void free_ptrs(void **ptrs, int n)
     free(ptrs);
 }
 
-char *fgetl(FILE *fp)
-{
-    if(feof(fp)) return 0;
-    size_t size = 512;
-    char *line = malloc(size*sizeof(char));
-    if(!fgets(line, size, fp)){
-        free(line);
-        return 0;
-    }
+// char *fgetl(FILE *fp)
+// {
+//     if(feof(fp)) return 0;
+//     size_t size = 512;
+//     char *line = malloc(size*sizeof(char));
+//     if(!fgets(line, size, fp)){
+//         free(line);
+//         return 0;
+//     }
 
-    size_t curr = strlen(line);
+//     size_t curr = strlen(line);
 
-    while((line[curr-1] != '\n') && !feof(fp)){
-        if(curr == size-1){
-            size *= 2;
-            line = realloc(line, size*sizeof(char));
-            if(!line) {
-                printf("%ld\n", size);
-                malloc_error();
-            }
-        }
-        size_t readsize = size-curr;
-        if(readsize > INT_MAX) readsize = INT_MAX-1;
-        fgets(&line[curr], readsize, fp);
-        curr = strlen(line);
-    }
-    if(line[curr-1] == '\n') line[curr-1] = '\0';
+//     while((line[curr-1] != '\n') && !feof(fp)){
+//         if(curr == size-1){
+//             size *= 2;
+//             line = realloc(line, size*sizeof(char));
+//             if(!line) {
+//                 printf("%ld\n", size);
+//                 malloc_error();
+//             }
+//         }
+//         size_t readsize = size-curr;
+//         if(readsize > INT_MAX) readsize = INT_MAX-1;
+//         fgets(&line[curr], readsize, fp);
+//         curr = strlen(line);
+//     }
+//     if(line[curr-1] == '\n') line[curr-1] = '\0';
 
-    return line;
-}
+//     return line;
+// }
 
 int read_int(int fd)
 {
@@ -420,12 +420,12 @@ void write_all(int fd, char *buffer, size_t bytes)
 }
 
 
-char *copy_string(char *s)
-{
-    char *copy = malloc(strlen(s)+1);
-    strncpy(copy, s, strlen(s)+1);
-    return copy;
-}
+// char *copy_string(char *s)
+// {
+//     char *copy = malloc(strlen(s)+1);
+//     strncpy(copy, s, strlen(s)+1);
+//     return copy;
+// }
 
 // list *parse_csv_line(char *line)
 // {
@@ -683,17 +683,17 @@ float rand_normal()
    }
  */
 
-size_t rand_size_t()
-{
-    return  ((size_t)(rand()&0xff) << 56) | 
-        ((size_t)(rand()&0xff) << 48) |
-        ((size_t)(rand()&0xff) << 40) |
-        ((size_t)(rand()&0xff) << 32) |
-        ((size_t)(rand()&0xff) << 24) |
-        ((size_t)(rand()&0xff) << 16) |
-        ((size_t)(rand()&0xff) << 8) |
-        ((size_t)(rand()&0xff) << 0);
-}
+// size_t rand_size_t()
+// {
+//     return  ((size_t)(rand()&0xff) << 56) | 
+//         ((size_t)(rand()&0xff) << 48) |
+//         ((size_t)(rand()&0xff) << 40) |
+//         ((size_t)(rand()&0xff) << 32) |
+//         ((size_t)(rand()&0xff) << 24) |
+//         ((size_t)(rand()&0xff) << 16) |
+//         ((size_t)(rand()&0xff) << 8) |
+//         ((size_t)(rand()&0xff) << 0);
+// }
 
 float rand_uniform(float min, float max)
 {

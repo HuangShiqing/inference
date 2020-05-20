@@ -71,7 +71,7 @@ int Conv2d(network *net, int filter, int size, int stride, int padding,
 		int activation, int batch_normalize, int layer_index) {
 	fprintf(stderr, "%5d ", layer_index);
 	int binary = 0, xnor = 0, adam = 0;
-	int h, w, c, n;
+	int h, w, c;
 	layer l = { 0 };
 
 	if (layer_index == 0) {

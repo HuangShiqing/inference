@@ -140,7 +140,8 @@ static int entry_index(layer l, int batch, int location, int entry)
 
 void forward_yolo_layer(const layer l, network net)
 {
-    int i,j,b,t,n;
+    // int i,j,b,t,n;
+    int b,n;
     memcpy(l.output, net.input, l.outputs*l.batch*sizeof(float));
 
 #ifndef GPU

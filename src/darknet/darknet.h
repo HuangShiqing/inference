@@ -524,8 +524,7 @@ typedef struct detection{
     int classes;
     // 属于每个类的概率，prob=s*class
     float *prob;
-    // 索引，用来表示框属于哪个anchor,值的范围是[0-8]
-    float *mask;
+    // float *mask;// 目前只发现在region层相关的检测结果会用到这个参数,yolo系列的检测结果不需要这个参数,注意区分yolo_layer的mask和det的mask
     // s的马甲
     float objectness;
     // 用于nms，表示当前正在nms的类的索引

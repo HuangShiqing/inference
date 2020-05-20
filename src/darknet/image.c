@@ -297,15 +297,15 @@ void draw_detections(image im, detection *dets, int num, float thresh, char **na
                 draw_label(im, top + width, left, label, rgb);
                 free_image(label);
             }
-            if (dets[i].mask){
-                image mask = float_to_image(14, 14, 1, dets[i].mask);
-                image resized_mask = resize_image(mask, b.w*im.w, b.h*im.h);
-                image tmask = threshold_image(resized_mask, .5);
-                embed_image(tmask, im, left, top);
-                free_image(mask);
-                free_image(resized_mask);
-                free_image(tmask);
-            }
+            // if (dets[i].mask){
+            //     image mask = float_to_image(14, 14, 1, dets[i].mask);
+            //     image resized_mask = resize_image(mask, b.w*im.w, b.h*im.h);
+            //     image tmask = threshold_image(resized_mask, .5);
+            //     embed_image(tmask, im, left, top);
+            //     free_image(mask);
+            //     free_image(resized_mask);
+            //     free_image(tmask);
+            // }
         }
     }
 }
