@@ -1,25 +1,32 @@
 CROSS_COMPILE =#arm-linux-gnueabi-#aarch64-linux-gnu-#指定交叉编译器
 DEBUG = 0#指定当前为debug模式
+NEON = 1#指定使用NEON
+
 CC = $(CROSS_COMPILE)gcc#指定编译器
-CFLAGS = -I./src/ -I./src/darknet/ -I./src/gstreamer -I./src/gtk/ -I./src/dip/ -Wall#指定头文件目录
+CFLAGS = -I./src/ -I./src/darknet/ -I./src/gstreamer -I./src/gtk/ -I./src/dip/ -I./src/neon/ -Wall#指定头文件目录
 CFLAGS += `pkg-config --cflags --libs gstreamer-1.0 gstreamer-video-1.0 gstreamer-app-1.0 gtk+-3.0`
+# CFLAGS += -fopenmp
 LDFLAGS = #指定库文件目录
 LIBS = -lm -lpthread#指定库文件名称
 TARGET = inference#最终生成的可执行文件名
 
-VPATH = ./src/:./src/darknet/:./src/gtk/:./src/gstreamer/:./src/dip/#告诉makefile去哪里找依赖文件和目标文件
+VPATH = ./src/:./src/darknet/:./src/gtk/:./src/gstreamer/:./src/dip/:./src/neon/#告诉makefile去哪里找依赖文件和目标文件
 
 #选择debug还是release
 ifeq ($(DEBUG), 1)
 CFLAGS+=-O0 -g
 else
-CFLAGS+=-Ofast
+CFLAGS+=-O2#TODO:使用Ofast会导致gemm_neon.s出现segmentation failt
+endif
+#选择是否使用NEON
+ifeq ($(NEON), 1)
+CFLAGS+=-DNEON
 endif
 
 OBJ = main.o network.o utils.o im2col.o my_layer.o image.o model.o parser.o \
 	  connected_layer.o convolutional_layer.o maxpool_layer.o avgpool_layer.o \
 	  batchnorm_layer.o activations.o box.o route_layer.o upsample_layer.o yolo_layer.o \
-	  blas.o gemm.o gstreamer.o gtk_show.o convert.o draw.o#中间过程所涉及的.o文件
+	  blas.o gemm.o gstreamer.o gtk_show.o convert.o draw.o gemm_neon.o#中间过程所涉及的.o文件	  
 OBJDIR = ./obj/#存放.o文件的文件夹
 OBJS = $(addprefix $(OBJDIR), $(OBJ))#添加路径
 
@@ -32,6 +39,8 @@ $(TARGET):$(OBJS)
 #这个不是静态模式，而是通配符，第一个%类似bash中的*。
 $(OBJDIR)%.o: %.c
 		$(CC) -c $(CFLAGS) $< -o $@
+$(OBJDIR)%.o: %.s
+		$(CC) -c $(CFLAGS) $< -mfpu=neon -mcpu=cortex-a53 -o $@		
 
 #用于生成存放.o文件的文件夹
 obj:

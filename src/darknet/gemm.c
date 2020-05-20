@@ -152,6 +152,7 @@ void gemm_tt(int M, int N, int K, float ALPHA,
 }
 
 
+#include "gemm_neon.h"
 void gemm_cpu(int TA, int TB, int M, int N, int K, float ALPHA, 
         float *A, int lda, 
         float *B, int ldb,
@@ -166,7 +167,13 @@ void gemm_cpu(int TA, int TB, int M, int N, int K, float ALPHA,
         }
     }
     if(!TA && !TB)
+    {
+        #ifdef NEON
+        gemm_nn_neon(M, N, K,A,lda, B, ldb,C,ldc);//没有参数ALPHA
+        #else
         gemm_nn(M, N, K, ALPHA,A,lda, B, ldb,C,ldc);
+        #endif
+    }       
     else if(TA && !TB)
         gemm_tn(M, N, K, ALPHA,A,lda, B, ldb,C,ldc);
     else if(!TA && TB)
