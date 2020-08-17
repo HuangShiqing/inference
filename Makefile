@@ -1,11 +1,11 @@
 CROSS_COMPILE =#arm-linux-gnueabi-#aarch64-linux-gnu-#指定交叉编译器
 DEBUG = 0#指定当前为debug模式
 NEON = 1#指定使用NEON
+OPENMP = 1#指定使用openmp
 
 CC = $(CROSS_COMPILE)gcc#指定编译器
 CFLAGS = -I./src/ -I./src/darknet/ -I./src/gstreamer -I./src/gtk/ -I./src/dip/ -I./src/neon/ -Wall#指定头文件目录
 CFLAGS += `pkg-config --cflags --libs gstreamer-1.0 gstreamer-video-1.0 gstreamer-app-1.0 gtk+-3.0`
-# CFLAGS += -fopenmp
 LDFLAGS = #指定库文件目录
 LIBS = -lm -lpthread#指定库文件名称
 TARGET = inference#最终生成的可执行文件名
@@ -16,11 +16,15 @@ VPATH = ./src/:./src/darknet/:./src/gtk/:./src/gstreamer/:./src/dip/:./src/neon/
 ifeq ($(DEBUG), 1)
 CFLAGS+=-O0 -g
 else
-CFLAGS+=-O2#TODO:使用Ofast会导致gemm_neon.s出现segmentation failt
+CFLAGS+=-O1#TODO:使用Ofast会导致gemm_neon.s出现segmentation failt
 endif
 #选择是否使用NEON
 ifeq ($(NEON), 1)
 CFLAGS+=-DNEON
+endif
+#选择是否使用openmp
+ifeq ($(OPENMP), 1)
+CFLAGS += -fopenmp
 endif
 
 OBJ = main.o network.o utils.o im2col.o my_layer.o image.o model.o parser.o \
@@ -47,4 +51,4 @@ obj:
 		mkdir obj
 .PHONY : clean
 clean :#删除生成的文件夹
-		-rm -r obj
+		-rm -r obj $(TARGET)

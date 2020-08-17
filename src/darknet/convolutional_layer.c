@@ -193,6 +193,7 @@ convolutional_layer make_convolutional_layer(int batch, int h, int w, int c, int
     l.batch_normalize = batch_normalize;
 
     l.weights = calloc(c/groups*n*size*size, sizeof(float));
+    l.weights_int8 = calloc(c/groups*n*size*size, sizeof(int8_t));
 //    l.weight_updates = calloc(c/groups*n*size*size, sizeof(float));
 
     l.biases = calloc(n, sizeof(float));
@@ -470,7 +471,18 @@ void forward_convolutional_layer(convolutional_layer l, network net)
             } else {
                 im2col_cpu(im, l.c/l.groups, l.h, l.w, l.size, l.stride, l.pad, b);
             }
-            gemm(0,0,m,n,k,1,a,k,b,n,1,c,n);
+            // gemm(0,0,m,n,k,1,a,k,b,n,1,c,n);
+
+            int num_thread = 2;
+            if(l.n%4==0)
+                num_thread = 4;                    
+            #pragma omp parallel for
+            for(int kk=0;kk<num_thread;kk++)
+            {
+                float *aa = a + kk*k*m/num_thread;
+                float *cc = c + kk*n*m/num_thread;
+                gemm(0,0,m/num_thread,n,k,1,aa,k,b,n,1,cc,n);
+            }
         }
     }
 
