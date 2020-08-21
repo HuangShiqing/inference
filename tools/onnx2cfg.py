@@ -44,9 +44,9 @@ if __name__ == "__main__":
             initializer_parm[initializer.name] = np.array(list(initializer.float_data), dtype='float32')
 
     # weights文件写版本信息
-    major = 1
-    minor = 1
-    revision = 1
+    major = 0
+    minor = 2
+    revision = 0
     seen = 1000
     np.array(major, dtype='int32').tofile(file_weights)
     np.array(minor, dtype='int32').tofile(file_weights)

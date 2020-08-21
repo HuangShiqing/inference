@@ -116,17 +116,18 @@ int main()
     char path[100]; //路径名最长为100个字符
 
     network *net = yolov3_tiny(1);
-    load_weights(net, "../resource/yolov3-tiny_120000.weights");
+    load_weights(net, "../resource/yolov3-tiny_new.weights");
     quantize_weights_symmetric(net);
     printf("\r\nstart quan featuremap\r\n");
     for (int i = 0; i < img_num; i++)
     {
-        sprintf(path, "%s%s", dir, name[i]);// 合并字符串得到完整路径
+        sprintf(path, "%s%s", dir, name[i]); // 合并字符串得到完整路径
         image im = load_image_color(path, 0, 0);
         image sized = letterbox_image(im, 416, 416);
         network_predict(net, sized.data);
-        quantize_featuremap_symmetric(net);        
+        quantize_featuremap_symmetric(net);
     }
     printf("\r\n");
+    save_weights(net, "../resource/yolov3-tiny_120000_q.weights", 1);
     return 0;
 }

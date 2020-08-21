@@ -951,7 +951,7 @@ int is_network(section *s)
 //    }
 //}
 //
-void save_convolutional_weights(layer l, FILE *fp)
+void save_convolutional_weights(layer l, FILE *fp, int quantize)
 {
 //    if(l.binary){
 //        //save_convolutional_weights_binary(l, fp);
@@ -969,7 +969,14 @@ void save_convolutional_weights(layer l, FILE *fp)
         fwrite(l.rolling_mean, sizeof(float), l.n, fp);
         fwrite(l.rolling_variance, sizeof(float), l.n, fp);
     }
-    fwrite(l.weights, sizeof(float), num, fp);
+    if(quantize == 0)
+        fwrite(l.weights, sizeof(float), num, fp);
+    else
+    {
+        fwrite(l.weights_int8, sizeof(int8_t), num, fp);
+        fwrite(&l.weights_quant_multipler, sizeof(float), 1, fp);
+        fwrite(l.input_quant_multipler, sizeof(float), l.c, fp);
+    }
 }
 
 //void save_batchnorm_weights(layer l, FILE *fp)
@@ -1000,7 +1007,7 @@ void save_connected_weights(layer l, FILE *fp)
     }
 }
 //
-void save_weights_upto(network *net, char *filename, int cutoff)
+void save_weights_upto(network *net, char *filename, int cutoff, int quantize)
 {
 #ifdef GPU
     if(net->gpu_index >= 0){
@@ -1010,21 +1017,28 @@ void save_weights_upto(network *net, char *filename, int cutoff)
     fprintf(stderr, "Saving weights to %s\n", filename);
     FILE *fp = fopen(filename, "wb");
     if(!fp) file_error(filename);
-
-//    int major = 0;
-//    int minor = 2;
-//    int revision = 0;
-//    fwrite(&major, sizeof(int), 1, fp);
-//    fwrite(&minor, sizeof(int), 1, fp);
-//    fwrite(&revision, sizeof(int), 1, fp);
-//    fwrite(net->seen, sizeof(size_t), 1, fp);
+    
+    int major;// major代表模型是否量化,1为量化模型,0为非量化模型
+    if(quantize == 1)
+        major = 1;
+    else
+        major = 0;
+    int minor = 2;
+    int revision = 0;
+    int iseen = 0;// 取消了net->seen
+    fwrite(&major, sizeof(int), 1, fp);
+    fwrite(&minor, sizeof(int), 1, fp);
+    fwrite(&revision, sizeof(int), 1, fp);
+    // fwrite(net->seen, sizeof(size_t), 1, fp);//size_t在64位机器上是8字节,32位机器上是4字节,这边原本要读取8字节,就用执行两次int代替
+    fwrite(&iseen, sizeof(int), 1, fp);
+    fwrite(&iseen, sizeof(int), 1, fp);
 
     int i;
     for(i = 0; i < net->n && i < cutoff; ++i){
         layer l = net->layers[i];
         if (l.dontsave) continue;
         if(l.type == CONVOLUTIONAL || l.type == DECONVOLUTIONAL){
-            save_convolutional_weights(l, fp);
+            save_convolutional_weights(l, fp, quantize);
         }
         if(l.type == CONNECTED){
             save_connected_weights(l, fp);
@@ -1075,9 +1089,9 @@ void save_weights_upto(network *net, char *filename, int cutoff)
     }
     fclose(fp);
 }
-void save_weights(network *net, char *filename)
+void save_weights(network *net, char *filename, int quantize)
 {
-    save_weights_upto(net, filename, net->n);
+    save_weights_upto(net, filename, net->n, quantize);
 }
 //
 void transpose_matrix(float *a, int rows, int cols)
@@ -1160,7 +1174,7 @@ void load_connected_weights(layer l, FILE *fp, int transpose)
 //#endif
 //}
 //
-void load_convolutional_weights(layer l, FILE *fp)
+void load_convolutional_weights(layer l, FILE *fp, int quantize)
 {
 //    if(l.binary){
         //load_convolutional_weights_binary(l, fp);
@@ -1200,7 +1214,14 @@ void load_convolutional_weights(layer l, FILE *fp)
 //            printf("\n");
 //        }
     }
-    fread(l.weights, sizeof(float), num, fp);
+    if(quantize == 0)
+        fread(l.weights, sizeof(float), num, fp);
+    else
+    {
+        fread(l.weights_int8, sizeof(int8_t), num, fp);
+        fread(&l.weights_quant_multipler, sizeof(float), 1, fp);
+        fread(l.input_quant_multipler, sizeof(float), l.c, fp);        
+    }
     //if(l.c == 3) scal_cpu(num, 1./256, l.weights, 1);
 //    if (l.flipped) {
 //        transpose_matrix(l.weights, l.c*l.size*l.size, l.n);
@@ -1244,13 +1265,15 @@ void load_weights_upto(network *net, char *filename, int start, int cutoff)
     }
     int transpose = (major > 1000) || (minor > 1000);
     // int transpose = 0;
-
+    int quantize = 0;
+    if(major == 1)
+        quantize = 1;        
     int i;
     for(i = start; i < net->n && i < cutoff; ++i){
         layer l = net->layers[i];
         if (l.dontload) continue;
         if(l.type == CONVOLUTIONAL || l.type == DECONVOLUTIONAL){
-            load_convolutional_weights(l, fp);
+            load_convolutional_weights(l, fp, quantize);
         }
         if(l.type == CONNECTED){
             load_connected_weights(l, fp, transpose);
