@@ -194,6 +194,7 @@ convolutional_layer make_convolutional_layer(int batch, int h, int w, int c, int
 
     l.weights = calloc(c/groups*n*size*size, sizeof(float));
     l.weights_int8 = calloc(c/groups*n*size*size, sizeof(int8_t));
+    l.input_quant_multipler = calloc(c, sizeof(float));
 //    l.weight_updates = calloc(c/groups*n*size*size, sizeof(float));
 
     l.biases = calloc(n, sizeof(float));
