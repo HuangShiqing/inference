@@ -34,20 +34,23 @@ void quantize_weights_symmetric(network *net)
                 absmax = fabsf(weight[j]);
         }
         // s = max/127
-        net->layers[i].weights_quant_multipler = absmax / 127;
+        net->layers[i].weights_quant_multipler[0] = absmax / 127;
         printf("layer %i absmax=%f, s=%f\r\n", i, absmax,
-               net->layers[i].weights_quant_multipler);
+               net->layers[i].weights_quant_multipler[0]);
         for (int j = 0; j < net->layers[i].nweights; j++)
         {
             // int8 = round(float/s)
             net->layers[i].weights_int8[j] = (int8_t)roundf(
-                net->layers[i].weights[j] / net->layers[i].weights_quant_multipler);
+                net->layers[i].weights[j] / net->layers[i].weights_quant_multipler[0]);
         }
     }
 }
 
-void quantize_featuremap_symmetric(network *net)
+void quantize_featuremap_symmetric(network *net, float *input)
 {
+    float *input_feature;
+    float *input_quant_multipler;
+    float absmax;
     //层循环
     for (int i = 0; i < net->n; i++)
     {
@@ -58,13 +61,16 @@ void quantize_featuremap_symmetric(network *net)
         // channel循环
         for (int j = 0; j < l.c; j++)
         {
-            float *out = net->layers[i - 1].output + j * l.h * l.w;
-            float *input_quant_multipler = l.input_quant_multipler + j;
-            float absmax = *input_quant_multipler * 127; //恢复来自上一张图片的absmax
+            if(i==0)
+                input_feature = input + j * l.h * l.w;
+            else                
+                input_feature = net->layers[i - 1].output + j * l.h * l.w;
+            input_quant_multipler = l.input_quant_multipler + j;
+            absmax = *input_quant_multipler * 127; //恢复来自上一张图片的absmax
             for (int k = 0; k < l.h * l.w; k++)
             {
-                if (fabsf(out[k]) > absmax)
-                    absmax = fabsf(out[k]);
+                if (fabsf(input_feature[k]) > absmax)
+                    absmax = fabsf(input_feature[k]);
             }
             // s = max/127
             *input_quant_multipler = absmax / 127;
@@ -100,8 +106,9 @@ int list_dir(char *dir, char **name)
         else
         {
             // printf("其他文件[%s]\n", ent->d_name);
-            char *a = (char *)malloc(strlen(ent->d_name) * sizeof(char));
-            memcpy(a, ent->d_name, strlen(ent->d_name) * sizeof(char));
+            //strlen计算字符串长度，不会包括\0，因此malloc申请 用于拷贝该字符串 来存储的空间时size需要+1
+            char *a = (char *)calloc(strlen(ent->d_name)+1, sizeof(char));
+            strcpy(a, ent->d_name);
             name[img_num++] = a;
         }
     }
@@ -113,10 +120,10 @@ int main()
     char *name[1000]; //最多可以用1000张图像进行量化
     char *dir = "../resource/calibration/";
     int img_num = list_dir(dir, name);
-    char path[100]; //路径名最长为100个字符
+    char path[300]; //路径名最长为100个字符
 
-    network *net = yolov3_tiny(1);
-    load_weights(net, "../resource/yolov3-tiny_new.weights");
+    network *net = yolov3_tiny(1, 0);
+    load_weights(net, "../resource/yolov3-tiny_120000.weights");
     quantize_weights_symmetric(net);
     printf("\r\nstart quan featuremap\r\n");
     for (int i = 0; i < img_num; i++)
@@ -125,7 +132,7 @@ int main()
         image im = load_image_color(path, 0, 0);
         image sized = letterbox_image(im, 416, 416);
         network_predict(net, sized.data);
-        quantize_featuremap_symmetric(net);
+        quantize_featuremap_symmetric(net, sized.data);
     }
     printf("\r\n");
     save_weights(net, "../resource/yolov3-tiny_120000_q.weights", 1);

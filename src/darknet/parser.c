@@ -974,7 +974,7 @@ void save_convolutional_weights(layer l, FILE *fp, int quantize)
     else
     {
         fwrite(l.weights_int8, sizeof(int8_t), num, fp);
-        fwrite(&l.weights_quant_multipler, sizeof(float), 1, fp);
+        fwrite(l.weights_quant_multipler, sizeof(float), 1, fp);
         fwrite(l.input_quant_multipler, sizeof(float), l.c, fp);
     }
 }
@@ -1219,7 +1219,7 @@ void load_convolutional_weights(layer l, FILE *fp, int quantize)
     else
     {
         fread(l.weights_int8, sizeof(int8_t), num, fp);
-        fread(&l.weights_quant_multipler, sizeof(float), 1, fp);
+        fread(l.weights_quant_multipler, sizeof(float), 1, fp);
         fread(l.input_quant_multipler, sizeof(float), l.c, fp);        
     }
     //if(l.c == 3) scal_cpu(num, 1./256, l.weights, 1);

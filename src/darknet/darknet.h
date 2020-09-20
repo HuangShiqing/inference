@@ -244,7 +244,7 @@ struct layer{
 //    float * squared;
 //    float * norms;
     int8_t* weights_int8;//量化后的参数
-    float weights_quant_multipler;//参数的量化系数s,现在是layer-wise
+    float* weights_quant_multipler;//参数的量化系数s,现在是layer-wise
     float* input_quant_multipler;//输入的量化系数s,现在是channel-wise
 
 //    float * spatial_mean;
