@@ -59,10 +59,10 @@ int main()
 	// image sized = letterbox_image(im, 416, 416);
 	buffer_input = malloc(WIDTH * HEIGHT * 3 * sizeof(float));
 	image **alphabet = load_alphabet();	
-	network *net = yolov3_tiny(1);
+	network *net = yolov3_tiny(1, 1);
 	// network *net = test_model();
 	// network *net = vgg16_adjusted(2);
-	load_weights(net, "./resource/yolov3-tiny_110000.weights");
+	load_weights(net, "./resource/yolov3-tiny_120000_q.weights");
 	sleep(1);
 	printf("go\r\n");
 	while (1)

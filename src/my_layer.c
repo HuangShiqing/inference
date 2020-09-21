@@ -68,7 +68,7 @@ void finish_net(network *net) {
 
 //TODO: 把padding换成SAME或者VALID
 int Conv2d(network *net, int filter, int size, int stride, int padding,
-		int activation, int batch_normalize, int layer_index) {
+		int activation, int batch_normalize, int quantize, int layer_index) {
 	fprintf(stderr, "%5d ", layer_index);
 	int binary = 0, xnor = 0, adam = 0;
 	int h, w, c;
@@ -85,7 +85,7 @@ int Conv2d(network *net, int filter, int size, int stride, int padding,
 	}
 
 	l = make_convolutional_layer(1, h, w, c, filter, 1, size, stride, padding,
-			activation, batch_normalize, binary, xnor, adam);
+			activation, batch_normalize, quantize, xnor, adam);
 	net->layers[layer_index] = l;
 	layer_index++;
 	return layer_index;

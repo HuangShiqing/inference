@@ -194,6 +194,7 @@ convolutional_layer make_convolutional_layer(int batch, int h, int w, int c, int
 
     l.weights = calloc(c/groups*n*size*size, sizeof(float));
     l.weights_int8 = calloc(c/groups*n*size*size, sizeof(int8_t));
+    l.weights_quant_multipler = calloc(1, sizeof(float));
     l.input_quant_multipler = calloc(c, sizeof(float));
 //    l.weight_updates = calloc(c/groups*n*size*size, sizeof(float));
 
@@ -219,8 +220,11 @@ convolutional_layer make_convolutional_layer(int batch, int h, int w, int c, int
 
     l.output = calloc(l.batch*l.outputs, sizeof(float));
 //    l.delta  = calloc(l.batch*l.outputs, sizeof(float));
-
-    l.forward = forward_convolutional_layer;
+    //用binary即quantize来代表是否是用int8的量化卷积
+    if(binary)
+        l.forward = forward_convolutional_layer_q;
+    else
+        l.forward = forward_convolutional_layer;
 //    l.backward = backward_convolutional_layer;
 //    l.update = update_convolutional_layer;
 //    if(binary){
@@ -496,6 +500,99 @@ void forward_convolutional_layer(convolutional_layer l, network net)
 
     activate_array(l.output, l.outputs*l.batch, l.activation);
 //    if(l.binary || l.xnor) swap_binary(&l);
+}
+
+#define W_MAX_VAL (256 / 2 - 1) // 7-bit (1-bit sign)
+#define I_MAX_VAL (256 / 2 - 1) // 7-bit (1-bit sign)
+//TODO:这个结果要除以R_MULT然后再乘以R_MULT的操作难道不是会增加误差嘛
+#define R_MULT (32) // 4 - 32
+static int max_abs(int src, int max_val)
+{
+    if (abs(src) > abs(max_val))
+        src = (src > 0) ? max_val : -max_val;
+    return src;
+}
+void forward_convolutional_layer_q(convolutional_layer l, network net)
+{
+    fill_cpu(l.outputs * l.batch, 0, l.output, 1);
+
+    //typedef int32_t conv_t;    // l.output
+    typedef int16_t conv_t; // l.output
+    conv_t *output_q = calloc(l.outputs, sizeof(conv_t));
+
+    int8_t *input_int8 = (int8_t *)calloc(l.inputs, sizeof(int8_t));
+    int z;
+    int wh = l.w * l.h;
+    for (z = 0; z < l.inputs; ++z)
+    {
+        //int16_t src = lround(state.input[k] * net.layers[0].input_quant_multipler);
+        int16_t src = lround(net.input[z] * l.input_quant_multipler[z / wh]);
+        input_int8[z] = max_abs(src, I_MAX_VAL);
+    }
+    ////////////////////////////////////
+    // cudnnConvolutionBiasActivationForward()
+    // y = act ( alpha1 * conv(x) + alpha2 * z + bias )
+    // int8 = activation( float * conv(int8) + float * int8 + float )
+    // int8 = activation( conv(input_int8) + bias_float ) // X_INT8x4 or X_INT8
+    // https://docs.nvidia.com/deeplearning/sdk/cudnn-developer-guide/index.html#cudnnConvolutionBiasActivationForward
+    ///////////////////////////////////
+
+    // 1. Convolution !!!
+    // int fil;
+
+    // cuDNN: y = conv(x)
+    int m = l.n / l.groups;                   //n,卷积核个数
+    int k = l.size * l.size * l.c / l.groups; //k*k*c,单个卷积核的空间尺寸大小
+    int n = l.out_w * l.out_h;                //输出feature map的w*h
+    int8_t *a = l.weights_int8;
+    int8_t *b = (int8_t *)net.workspace; //直接指针类型转换
+    conv_t *c = output_q;                // int16_t
+
+    // convolution as GEMM (as part of BLAS)
+    //for (i = 0; i < l.batch; ++i) {
+    im2col_cpu_int8(input_int8, l.c, l.h, l.w, l.size, l.stride, l.pad, b); // here
+    //gemm_nn_int8_int16(m, n, k, 1, a, k, b, n, c, n);    // single-thread gemm
+
+    int t; // multi-thread gemm
+#pragma omp parallel for
+    for (t = 0; t < m; ++t)
+    {
+        gemm_nn_int8_int16(1, n, k, 1, a + t * k, k, b, n, c + t * n, n);
+        //gemm_nn_int8_int16_conv16(1, n, k, 1, a + t*k, k, b, n, c + t*n, n);
+        //gemm_nn_int8_int32(1, n, k, 1, a + t*k, k, b, n, c + t*n, n); // conv_t should be int32_t
+    }
+
+    int i;
+    float *ALPHA1 = calloc(l.c, sizeof(float));
+    for (i = 0; i < l.c; i++)
+        ALPHA1[i] = R_MULT / (l.input_quant_multipler[i] * l.weights_quant_multipler[0]);
+    // float ALPHA1 = R_MULT / (l.input_quant_multipler * l.weights_quant_multipler);
+    // cuDNN: y = alpha1 * conv(x)
+    int out_wh = l.out_h * l.out_w;
+    for (i = 0; i < l.outputs; ++i)
+    {
+        l.output[i] = output_q[i] * ALPHA1[i / out_wh % l.out_c]; // cuDNN: alpha1
+    }
+    // cuDNN: y = alpha1 * conv(x) + bias
+    // for (fil = 0; fil < l.n; ++fil) {
+    //     for (j = 0; j < l.out_w*l.out_h; ++j) {
+    //         l.output[fil*l.out_w*l.out_h + j] += l.biases[fil];
+    //     }
+    // }
+    free(input_int8);
+    free(ALPHA1);
+    free(output_q);
+    if (l.batch_normalize)
+    {
+        forward_batchnorm_layer(l, net);
+    }
+    else
+    {
+        add_bias(l.output, l.biases, l.batch, l.n, l.out_h * l.out_w);
+    }
+
+    activate_array(l.output, l.outputs * l.batch, l.activation);
+    //    if(l.binary || l.xnor) swap_binary(&l);
 }
 
 //void backward_convolutional_layer(convolutional_layer l, network net)

@@ -97,6 +97,36 @@ void gemm_nn(int M, int N, int K, float ALPHA,
         }
     }
 }
+//TODO:这个结果要除以R_MULT然后再乘以R_MULT的操作难道不是会增加误差嘛
+#define R_MULT (32)    // 4 - 32
+static int max_abs(int src, int max_val)
+{
+    if (abs(src) > abs(max_val)) src = (src > 0) ? max_val : -max_val;
+    return src;
+}
+void gemm_nn_int8_int16(int M, int N, int K, int8_t ALPHA,
+    int8_t *A, int lda,
+    int8_t *B, int ldb,
+    int16_t *C, int ldc)
+{
+    int32_t *c_tmp = calloc(N, sizeof(int32_t));
+    int i, j, k;
+    for (i = 0; i < M; ++i) {
+        for (k = 0; k < K; ++k) {
+            register int16_t A_PART = ALPHA*A[i*lda + k];
+            //#pragma simd parallel for
+            for (j = 0; j < N; ++j) {
+                c_tmp[j] += A_PART*B[k*ldb + j];
+                //C[i*ldc + j] += max_abs(A_PART*B[k*ldb + j] / (R_MULT), (256 * 128 - 1));
+            }
+        }
+        for (j = 0; j < N; ++j) {
+            C[i*ldc + j] += max_abs(c_tmp[j] / (R_MULT), (256 * 128 - 1));
+            c_tmp[j] = 0;
+        }
+    }
+    free(c_tmp);
+}
 
 void gemm_nt(int M, int N, int K, float ALPHA, 
         float *A, int lda, 
