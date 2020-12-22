@@ -195,7 +195,7 @@ convolutional_layer make_convolutional_layer(int batch, int h, int w, int c, int
     l.weights = calloc(c/groups*n*size*size, sizeof(float));
     l.weights_int8 = calloc(c/groups*n*size*size, sizeof(int8_t));
     l.weights_quant_multipler = calloc(1, sizeof(float));
-    l.input_quant_multipler = calloc(c, sizeof(float));
+    l.input_quant_multipler = calloc(1, sizeof(float));
 //    l.weight_updates = calloc(c/groups*n*size*size, sizeof(float));
 
     l.biases = calloc(n, sizeof(float));
@@ -526,7 +526,7 @@ void forward_convolutional_layer_q(convolutional_layer l, network net)
     for (z = 0; z < l.inputs; ++z)
     {
         //int16_t src = lround(state.input[k] * net.layers[0].input_quant_multipler);
-        int16_t src = lround(net.input[z] * l.input_quant_multipler[z / wh]);
+        int16_t src = lround(net.input[z] / l.input_quant_multipler[0]);
         input_int8[z] = max_abs(src, I_MAX_VAL);
     }
     ////////////////////////////////////
@@ -563,15 +563,15 @@ void forward_convolutional_layer_q(convolutional_layer l, network net)
     }
 
     int i;
-    float *ALPHA1 = calloc(l.c, sizeof(float));
-    for (i = 0; i < l.c; i++)
-        ALPHA1[i] = R_MULT / (l.input_quant_multipler[i] * l.weights_quant_multipler[0]);
-    // float ALPHA1 = R_MULT / (l.input_quant_multipler * l.weights_quant_multipler);
+    //float *ALPHA1 = calloc(l.c, sizeof(float));
+    //for (i = 0; i < l.c; i++)
+    //    ALPHA1[i] = (l.input_quant_multipler[i] * l.weights_quant_multipler[0]);
+    float ALPHA1 = R_MULT / (l.input_quant_multipler[0] * l.weights_quant_multipler[0]);
     // cuDNN: y = alpha1 * conv(x)
-    int out_wh = l.out_h * l.out_w;
+    //int out_wh = l.out_h * l.out_w;
     for (i = 0; i < l.outputs; ++i)
     {
-        l.output[i] = output_q[i] * ALPHA1[i / out_wh % l.out_c]; // cuDNN: alpha1
+        l.output[i] = output_q[i] * ALPHA1; // cuDNN: alpha1
     }
     // cuDNN: y = alpha1 * conv(x) + bias
     // for (fil = 0; fil < l.n; ++fil) {
@@ -580,7 +580,7 @@ void forward_convolutional_layer_q(convolutional_layer l, network net)
     //     }
     // }
     free(input_int8);
-    free(ALPHA1);
+    //free(ALPHA1);
     free(output_q);
     if (l.batch_normalize)
     {

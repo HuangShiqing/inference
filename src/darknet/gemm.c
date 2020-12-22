@@ -114,7 +114,7 @@ void gemm_nn_int8_int16(int M, int N, int K, int8_t ALPHA,
     for (i = 0; i < M; ++i) {
         for (k = 0; k < K; ++k) {
             register int16_t A_PART = ALPHA*A[i*lda + k];
-            //#pragma simd parallel for
+            #pragma simd parallel for
             for (j = 0; j < N; ++j) {
                 c_tmp[j] += A_PART*B[k*ldb + j];
                 //C[i*ldc + j] += max_abs(A_PART*B[k*ldb + j] / (R_MULT), (256 * 128 - 1));

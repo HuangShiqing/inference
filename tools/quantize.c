@@ -59,22 +59,25 @@ void quantize_featuremap_symmetric(network *net, float *input)
             continue;
         // printf("layer %i\r\n",i);
         // channel循环
-        for (int j = 0; j < l.c; j++)
+        input_quant_multipler = l.input_quant_multipler;// + j;
+        absmax = *input_quant_multipler * 127; //恢复来自上一张图片的absmax
+        for (int j = 0; j < l.c * l.h * l.w; j++)
         {
             if(i==0)
-                input_feature = input + j * l.h * l.w;
+                input_feature = input + j;// * l.h * l.w;
             else                
-                input_feature = net->layers[i - 1].output + j * l.h * l.w;
-            input_quant_multipler = l.input_quant_multipler + j;
-            absmax = *input_quant_multipler * 127; //恢复来自上一张图片的absmax
-            for (int k = 0; k < l.h * l.w; k++)
+                input_feature = net->layers[i - 1].output + j; //* l.h * l.w;
+            //input_quant_multipler = l.input_quant_multipler;// + j;
+            //absmax = *input_quant_multipler * 127; //恢复来自上一张图片的absmax
+            //for (int k = 0; k < l.h * l.w; k++)
             {
-                if (fabsf(input_feature[k]) > absmax)
-                    absmax = fabsf(input_feature[k]);
+                if (fabsf(input_feature[0]) > absmax)
+                    absmax = fabsf(input_feature[0]);
             }
             // s = max/127
-            *input_quant_multipler = absmax / 127;
+            //*input_quant_multipler = absmax / 127;
         }
+        *input_quant_multipler = absmax / 127;
     }
     fprintf(stderr, "*");
     fflush(stderr);
@@ -115,6 +118,17 @@ int list_dir(char *dir, char **name)
     return img_num;
 }
 
+void write_feature(char* str, layer layer)
+{
+    FILE *fpWrite=fopen(str,"w");
+    fprintf(fpWrite,"%d,%d,%d\r\n",layer.out_c,layer.out_h,layer.out_w);
+    for(int j=0; j<layer.out_c*layer.out_h*layer.out_w; j++)
+    {        
+        fprintf(fpWrite,"%f\r\n",layer.output[j]);
+    }        
+    fclose(fpWrite);
+}
+
 int main()
 {
     char *name[1000]; //最多可以用1000张图像进行量化
@@ -135,6 +149,57 @@ int main()
         quantize_featuremap_symmetric(net, sized.data);
     }
     printf("\r\n");
+    for(int i=0;i<net->n;i++)
+    {
+        layer l = net->layers[i];
+        if (l.type != CONVOLUTIONAL)
+            continue;
+        printf("layer %i, s=%f\r\n", i, net->layers[i].input_quant_multipler[0]);
+    
+    }
     save_weights(net, "../resource/yolov3-tiny_120000_q.weights", 1);
+    //FILE *fpWrite=fopen("data.txt","w");
+    //for(int j=0;j<net->n;j++)
+    //{
+    //    if(net->layers[j].type != CONVOLUTIONAL)
+    //        continue;
+    //    fprintf(fpWrite,"layer%d:\r\n",j);
+    //    for(int k=0;k<net->layers[j].c;k++)
+    //        fprintf(fpWrite,"%f ",net->layers[j].input_quant_multipler[k]);
+    //    fprintf(fpWrite,"\r\n");
+    //}        
+    //fclose(fpWrite);
     return 0;
 }
+
+
+    
+// int main()
+// {
+//     network *net = yolov3_tiny(1, 1);
+//     load_weights(net, "../resource/yolov3-tiny_120000_q.weights");
+//     image im = load_image_color("../resource/face.jpg", 0, 0);
+//     image sized = letterbox_image(im, 416, 416);
+//     printf("start inference\r\n");
+//     network_predict(net, sized.data);
+//     printf("done\r\n");
+
+//     for(int i=0;i<net->n;i++)
+//     {
+//         layer l = net->layers[i];
+//         if (l.type != CONVOLUTIONAL)
+//             continue;
+//         printf("layer %i, s=%f\r\n", i, net->layers[i].input_quant_multipler[0]);
+    
+//     }
+//     // char *name = "1.txt";
+//     // write_feature(name, net->layers[0]);
+
+//     int nboxes = 0;
+//     float thresh = .5;
+//     float nms = .45;
+//     layer l = net->layers[net->n - 1];
+//     detection *dets = get_network_boxes(net, WIDTH, HEIGHT, thresh, 0.5, 0, 1, &nboxes);
+//     do_nms_obj(dets, nboxes, l.classes, nms);
+//     return 0;
+// }

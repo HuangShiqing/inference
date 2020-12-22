@@ -1,5 +1,6 @@
 CROSS_COMPILE =#arm-linux-gnueabi-#aarch64-linux-gnu-#指定交叉编译器
-DEBUG = 1#指定当前为debug模式
+DEBUG = 0#指定当前为debug模式
+OPENMP = 1#指定使用openmp
 
 CC = $(CROSS_COMPILE)gcc#指定编译器
 CFLAGS = -I../src/ -I../src/darknet/ -I../src/gstreamer -I../src/gtk/ -I../src/dip/ -I../src/neon/ -Wall#指定头文件目录
@@ -19,6 +20,10 @@ ifeq ($(DEBUG), 1)
 CFLAGS+=-O0 -g
 else
 CFLAGS+=-O1#TODO:使用Ofast会导致gemm_neon.s出现segmentation failt
+endif
+#选择是否使用openmp
+ifeq ($(OPENMP), 1)
+CFLAGS += -fopenmp
 endif
  
 OBJDIR = ./obj/#存放.o文件的文件夹
